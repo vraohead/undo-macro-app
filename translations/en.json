@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "Undo Macro (Simple)",
+    "short_description": "Clear unsent macro text and reset tags.",
+    "long_description": "Adds an Undo button in the ticket sidebar to clear composer text and reset ticket tags to the last saved set."
+  },
+  "ui": {
+    "heading": "Undo Macro",
+    "hint": "Clears unsent macro text and resets tags to the last saved set.",
+    "undo_button": "Undo",
+    "reset_link": "Reset tags to last saved (no comment clear)"
+  },
+  "status": {
+    "working": "Working…",
+    "undo_success": "Macro text cleared and tags reset to last saved.",
+    "reset_success": "Tags reset to last saved.",
+    "undo_error": "Could not undo. Check permissions or refresh the ticket.",
+    "reset_error": "Could not reset tags. Check permissions or refresh the ticket."
+  },
+  "diff": {
+    "removed": "Removed:",
+    "restored": "Restored:",
+    "none": "—"
+  }
+}
