@@ -1,20 +1,27 @@
 {
   "name": "Undo Macro (Simple)",
-  "author": "Headout",
+  "author": {
+    "name": "Headout",
+    "email": "vivek.rao@headout.com"
+  },
   "defaultLocale": "en",
   "private": true,
   "version": "1.0.0",
   "frameworkVersion": "2.0",
   "singleInstall": true,
+
   "location": {
     "support": {
       "ticket_sidebar": "assets/index.html"
     }
   },
+
   "requirements": {
     "zendesk_api": true
   },
+
   "parameters": [],
+
   "assets": {
     "logo": "assets/icon.svg"
   }
