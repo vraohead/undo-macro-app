@@ -6,7 +6,8 @@
   "version": "1.0.0",
   "frameworkVersion": "2.0",
   "singleInstall": true,
-  "locations": {
+
+  "location": {
     "support": {
       "ticket_sidebar": {
         "url": "src/index.html",
@@ -14,11 +15,14 @@
       }
     }
   },
+
   "requirements": {
     "zendesk_api": true
   },
+
+  "parameters": [],
+
   "assets": {
     "logo": "assets/icon.svg"
-  },
-  "parameters": []
+  }
 }
