@@ -6,19 +6,15 @@
   "version": "1.0.0",
   "frameworkVersion": "2.0",
   "singleInstall": true,
-
   "location": {
     "support": {
-      "ticket_sidebar": "src/index.html"
+      "ticket_sidebar": "assets/index.html"
     }
   },
-
   "requirements": {
     "zendesk_api": true
   },
-
   "parameters": [],
-
   "assets": {
     "logo": "assets/icon.svg"
   }
