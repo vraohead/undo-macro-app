@@ -9,10 +9,7 @@
 
   "location": {
     "support": {
-      "ticket_sidebar": {
-        "url": "src/index.html",
-        "flexible": true
-      }
+      "ticket_sidebar": "src/index.html"
     }
   },
 
