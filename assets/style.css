@@ -14,19 +14,17 @@ body { margin: 0; background: var(--bg); font-family: system-ui, -apple-system, 
 h3 { margin: 0 0 8px; font-size: 16px; line-height: 1.2; }
 .hint { color: var(--text-muted); margin: 0 0 12px; font-size: 12px; }
 
-#undoBtn, #resetBtn {
+#undoBtn {
   width: 100%;
   padding: 10px 12px;
   border: 0;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  background: var(--primary);
+  color: #fff;
 }
-
-#undoBtn { background: var(--primary); color: #fff; }
 #undoBtn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-#resetBtn { margin-top: 8px; background: transparent; color: var(--primary); text-decoration: underline; }
 
 .status { margin-top: 10px; font-size: 12px; color: #344054; }
 .status.error { color: var(--err); }
@@ -35,4 +33,3 @@ h3 { margin: 0 0 8px; font-size: 16px; line-height: 1.2; }
 .diff { margin-top: 8px; padding: 8px; border-radius: 6px; background: #f8fafc; font-size: 12px; }
 .diff strong { font-weight: 700; }
 .diff .tag { display: inline-block; padding: 2px 6px; margin: 2px 4px 0 0; border-radius: 999px; background: #eef2ff; }
-.linklike { background: none; border: none; padding: 0; }
