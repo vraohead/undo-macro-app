@@ -1,123 +1,80 @@
-/* global ZAFClient */
+/* global ZAFClient, moment */
 const client = ZAFClient.init();
 
 const els = {
   undoBtn: null,
   status: null,
-  diffWrap: null,
-  removed: null,
-  restored: null
+  timeLeft: null,
+  timeStatus: null
 };
 
 let ticketId = null;
-let baseTags = new Set();      // server truth (last saved)
+let baseTags = new Set();  // Server truth (last saved)
 let lastComment = '';
 let lastTags = new Set();
 
-let watchTimer = null;
-let refreshTimer = null;
-
-// Make backspace feel instant but still light
-const POLL_MS = 80;
-
-// One-shot guard so we don't fire repeatedly while blank
-let cleanedWhileBlank = false;
-
-// Robust "blank" detector: strips zero-width chars & NBSP before trimming
-function isBlankish(text) {
-  if (!text) return true;
-  return text
-    .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width chars
-    .replace(/\u00A0/g, ' ')               // NBSP to space
-    .trim().length === 0;
-}
-
 client.on('app.registered', async () => {
-  els.undoBtn  = document.getElementById('undoBtn');
-  els.status   = document.getElementById('status');
-  els.diffWrap = document.getElementById('diff');
-  els.removed  = document.getElementById('removedTags');
-  els.restored = document.getElementById('restoredTags');
+  els.undoBtn = document.getElementById('undoBtn');
+  els.status = document.getElementById('status');
+  els.timeLeft = document.getElementById('timeLeft');
+  els.timeStatus = document.getElementById('timeStatus');
 
   if (els.undoBtn) els.undoBtn.addEventListener('click', onUndo);
 
   try {
     ticketId = (await client.get('ticket.id'))['ticket.id'];
-    await refreshBaseTags();   // ensure we have server truth before watching
+    await refreshBaseTags();  // Ensure we have server truth before starting
     startWatchers();
   } catch (e) {
     console.error('Init failed', e);
     setStatus('Could not initialize. Refresh the ticket.', false);
   }
+
+  // Calculate the time left for the experience
+  calculateTimeLeft();
 });
 
-function startWatchers() {
-  stopWatchers();
-  watchTimer = setInterval(checkStateAndAutoCleanOnBlank, POLL_MS);
-  // Keep base tags fresh (after submits / other agents)
-  refreshTimer = setInterval(refreshBaseTags, 8000);
-}
-
-function stopWatchers() {
-  if (watchTimer)  { clearInterval(watchTimer);  watchTimer = null; }
-  if (refreshTimer){ clearInterval(refreshTimer);refreshTimer = null; }
-}
-
-async function checkStateAndAutoCleanOnBlank() {
+// Function to get and compare the experience time
+async function calculateTimeLeft() {
   try {
-    const comment = (await client.get('ticket.comment.text'))['ticket.comment.text'] || '';
-    const tagsArr = (await client.get('ticket.tags'))['ticket.tags'] || [];
-    const tags = new Set(tagsArr);
+    const ticket = await client.get('ticket');
+    
+    const city = ticket.ticket.custom_fields['360021522151'];  // City
+    const startTime = ticket.ticket.custom_fields['360021522271'];  // Start Time
+    const tourDate = ticket.ticket.custom_fields['360024232231'];  // Tour Date
 
-    const blank = isBlankish(comment);
-    const tagsDrifted = !setsEqual(tags, baseTags); // unsent macro changed tags vs saved
-
-    if (blank) {
-      // Fire once when it *first* becomes blank and tags differ from saved
-      if (!cleanedWhileBlank && tagsDrifted) {
-        await autoClearAndReset({ reason: 'Auto: comment cleared' }, tags, baseTags);
-        cleanedWhileBlank = true;            // don't repeat while still blank
-        lastComment = '';
-        lastTags = new Set(baseTags);
-        return;
-      }
-    } else {
-      // Re-arm when the agent types anything again
-      cleanedWhileBlank = false;
+    if (!city || !startTime || !tourDate) {
+      els.timeLeft.textContent = "Experience data not available.";
+      return;
     }
 
-    lastComment = comment;
-    lastTags = tags;
-  } catch (e) {
-    // Keep quiet to avoid UI noise; log for dev
-    console.debug('Auto-clean check skipped', e);
+    // Combine date and start time into a single datetime string
+    const experienceTimeStr = `${tourDate} ${startTime}`;
+    
+    // Parse the experience time to the local city time zone
+    const experienceTime = moment.tz(experienceTimeStr, city);
+
+    // Convert to IST
+    const currentTimeIST = moment.tz('Asia/Kolkata');
+    const diffMinutes = experienceTime.diff(currentTimeIST, 'minutes');
+    
+    // Update UI with the time left
+    if (diffMinutes < 0) {
+      els.timeLeft.textContent = "The experience time has already passed.";
+      els.timeStatus.textContent = `Experience was at ${experienceTime.format('YYYY-MM-DD HH:mm')}`;
+    } else if (diffMinutes <= 10) {
+      els.timeLeft.textContent = `${diffMinutes} minutes left to fulfill`;
+      els.timeStatus.textContent = `Experience is almost here!`;
+    } else {
+      els.timeLeft.textContent = `${diffMinutes} minutes remaining`;
+      els.timeStatus.textContent = `Fulfillment time is getting closer.`;
+    }
+  } catch (error) {
+    console.error("Error calculating experience time:", error);
   }
 }
 
-async function autoClearAndReset(meta, uiTagsSet, baseTagsSet) {
-  const removed = [...uiTagsSet].filter(t => !baseTagsSet.has(t));  // unsent macro-added
-  const restored = [...baseTagsSet].filter(t => !uiTagsSet.has(t)); // unsent macro-removed
-
-  // 1) Ensure composer is empty (safe even if already blank)
-  await client.set('ticket.comment.text', '');
-  // 2) Reset tags to server truth
-  await client.set('ticket.tags', Array.from(baseTagsSet));
-
-  showDiff(removed, restored);
-  setStatus(`${meta.reason}: reset tags to last saved.`, true);
-}
-
-async function refreshBaseTags() {
-  try {
-    const res = await client.request({ url: `/api/v2/tickets/${ticketId}.json`, type: 'GET' });
-    const serverTags = Array.isArray(res?.ticket?.tags) ? res.ticket.tags : [];
-    baseTags = new Set(serverTags);
-  } catch (e) {
-    console.debug('Could not refresh base tags', e);
-  }
-}
-
-/* ---------- Manual Undo ---------- */
+// Undo functionality for clearing comment and resetting tags
 async function onUndo() {
   setStatus('Working…');
   setDisabled(true);
@@ -143,15 +100,28 @@ async function onUndo() {
   }
 }
 
-/* ---------- UI helpers ---------- */
+// Refresh base tags from the server
+async function refreshBaseTags() {
+  try {
+    const res = await client.request({ url: `/api/v2/tickets/${ticketId}.json`, type: 'GET' });
+    const serverTags = Array.isArray(res?.ticket?.tags) ? res.ticket.tags : [];
+    baseTags = new Set(serverTags);
+  } catch (e) {
+    console.debug('Could not refresh base tags', e);
+  }
+}
+
+// Helper functions for UI updates
 function setStatus(msg, ok) {
   if (!els.status) return;
   els.status.textContent = msg;
   els.status.className = 'status' + (ok === true ? ' success' : ok === false ? ' error' : '');
 }
+
 function setDisabled(disabled) {
   if (els.undoBtn) els.undoBtn.disabled = disabled;
 }
+
 function showDiff(removedTags, restoredTags) {
   if (!els.diffWrap) return;
   els.removed.innerHTML = (removedTags.length ? removedTags : ['—'])
@@ -160,12 +130,14 @@ function showDiff(removedTags, restoredTags) {
     .map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(' ');
   els.diffWrap.hidden = false;
 }
+
 function hideDiff() {
   if (!els.diffWrap) return;
   els.diffWrap.hidden = true;
   els.removed.textContent = '';
   els.restored.textContent = '';
 }
+
 function escapeHtml(s) {
   return String(s)
     .replaceAll('&', '&amp;')
@@ -174,4 +146,3 @@ function escapeHtml(s) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
-function setsEqual(a,b){ if(a.size!==b.size) return false; for (const v of a) if(!b.has(v)) return false; return true; }
