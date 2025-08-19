@@ -2,22 +2,29 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Undo Macro</title>
+  <title>Undo Macro + Experience Time Left</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2/zaf_sdk.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h3>Undo Macro</h3>
-    <p class="hint">Auto-clears macro text and resets tags to the last saved set when a macro is applied or the comment is blank.</p>
-
-    <button id="undoBtn">Undo</button>
-
-    <div id="status" class="status"></div>
-    <div id="diff" class="diff" hidden>
-      <div><strong>Removed:</strong> <span id="removedTags">—</span></div>
-      <div><strong>Restored:</strong> <span id="restoredTags">—</span></div>
+  <div class="app-container">
+    
+    <!-- Undo Macro Section -->
+    <div class="section undo-container">
+      <h3>Undo Macro</h3>
+      <p class="hint">Clears unsent macro text and resets tags to the last saved set.</p>
+      <button id="undoBtn">Undo</button>
+      <div id="status" class="status"></div>
     </div>
+
+    <!-- Time Left Section -->
+    <div class="section time-left-container">
+      <h3>Experience Time Left</h3>
+      <div id="timeLeft" class="time-left">Loading...</div>
+      <div id="timeStatus" class="status"></div>
+    </div>
+    
   </div>
 
   <script src="main.js"></script>
