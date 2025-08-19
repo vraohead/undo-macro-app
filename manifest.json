@@ -3,26 +3,19 @@
   "author": {
     "name": "Headout",
     "email": "vivek.rao@headout.com"
-  },
+  }
+ {
+  "name": "Undo Macro + Experience Time Left",
+  "author": { "name": "Headout", "email": "eng@headout.com" },
   "defaultLocale": "en",
   "private": true,
   "version": "1.0.0",
   "frameworkVersion": "2.0",
-  "singleInstall": true,
-
+  "requirements": { "zendesk_api": true },
   "location": {
     "support": {
       "ticket_sidebar": "assets/index.html"
     }
-  },
-
-  "requirements": {
-    "zendesk_api": true
-  },
-
-  "parameters": [],
-
-  "assets": {
-    "logo": "assets/icon.svg"
   }
 }
+
