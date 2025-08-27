@@ -1,134 +1,48 @@
-/* global ZAFClient, moment */
+/* global ZAFClient */
 const client = ZAFClient.init();
 
+// UI refs
 const els = {
+  disableToggle: null,
   undoBtn: null,
   status: null,
-  timeLeft: null,
-  timeStatus: null
+  diffWrap: null,
+  removed: null,
+  restored: null,
 };
 
+// State
 let ticketId = null;
-let baseTags = new Set();  // Server truth (last saved)
+let baseTags = new Set(); // last saved tags from server (truth)
 let lastComment = '';
 let lastTags = new Set();
+let watchersActive = false; // whether listeners are attached
 
-client.on('app.registered', async () => {
-  els.undoBtn = document.getElementById('undoBtn');
-  els.status = document.getElementById('status');
-  els.timeLeft = document.getElementById('timeLeft');
-  els.timeStatus = document.getElementById('timeStatus');
+// Utilities
+const key = (id) => `undo-macro:disable:${id}`;
+const persistDisabled = (id, val) => localStorage.setItem(key(id), val ? '1' : '0');
+const readDisabled = (id) => localStorage.getItem(key(id)) === '1';
 
-  if (els.undoBtn) els.undoBtn.addEventListener('click', onUndo);
+const setsEqual = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+const escapeHtml = (s) => String(s)
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#039;');
 
-  try {
-    ticketId = (await client.get('ticket.id'))['ticket.id'];
-    await refreshBaseTags();  // Ensure we have server truth before starting
-    startWatchers();
-  } catch (e) {
-    console.error('Init failed', e);
-    setStatus('Could not initialize. Refresh the ticket.', false);
-  }
-
-  // Calculate the time left for the experience
-  calculateTimeLeft();
-});
-
-// Function to get and compare the experience time
-async function calculateTimeLeft() {
-  try {
-    const ticket = await client.get('ticket');
-    
-    const city = ticket.ticket.custom_fields['360021522151'];  // City
-    const startTime = ticket.ticket.custom_fields['360021522271'];  // Start Time
-    const tourDate = ticket.ticket.custom_fields['360024232231'];  // Tour Date
-
-    if (!city || !startTime || !tourDate) {
-      els.timeLeft.textContent = "Experience data not available.";
-      return;
-    }
-
-    // Combine date and start time into a single datetime string
-    const experienceTimeStr = `${tourDate} ${startTime}`;
-    
-    // Parse the experience time to the local city time zone
-    const experienceTime = moment.tz(experienceTimeStr, city);
-
-    // Convert to IST
-    const currentTimeIST = moment.tz('Asia/Kolkata');
-    const diffMinutes = experienceTime.diff(currentTimeIST, 'minutes');
-    
-    // Update UI with the time left
-    if (diffMinutes < 0) {
-      els.timeLeft.textContent = "The experience time has already passed.";
-      els.timeStatus.textContent = `Experience was at ${experienceTime.format('YYYY-MM-DD HH:mm')}`;
-    } else if (diffMinutes <= 10) {
-      els.timeLeft.textContent = `${diffMinutes} minutes left to fulfill`;
-      els.timeStatus.textContent = `Experience is almost here!`;
-    } else {
-      els.timeLeft.textContent = `${diffMinutes} minutes remaining`;
-      els.timeStatus.textContent = `Fulfillment time is getting closer.`;
-    }
-  } catch (error) {
-    console.error("Error calculating experience time:", error);
-  }
-}
-
-// Undo functionality for clearing comment and resetting tags
-async function onUndo() {
-  setStatus('Working…');
-  setDisabled(true);
-  hideDiff();
-
-  try {
-    const uiTags = new Set(((await client.get('ticket.tags'))['ticket.tags']) || []);
-    await refreshBaseTags();
-
-    await client.set('ticket.comment.text', '');
-    await client.set('ticket.tags', Array.from(baseTags));
-
-    const removed = [...uiTags].filter(t => !baseTags.has(t));
-    const restored = [...baseTags].filter(t => !uiTags.has(t));
-    showDiff(removed, restored);
-
-    setStatus('Macro text cleared and tags reset to last saved.', true);
-  } catch (e) {
-    console.error('Undo failed', e);
-    setStatus('Could not undo. Check permissions or refresh.', false);
-  } finally {
-    setDisabled(false);
-  }
-}
-
-// Refresh base tags from the server
-async function refreshBaseTags() {
-  try {
-    const res = await client.request({ url: `/api/v2/tickets/${ticketId}.json`, type: 'GET' });
-    const serverTags = Array.isArray(res?.ticket?.tags) ? res.ticket.tags : [];
-    baseTags = new Set(serverTags);
-  } catch (e) {
-    console.debug('Could not refresh base tags', e);
-  }
-}
-
-// Helper functions for UI updates
-function setStatus(msg, ok) {
+function setStatus(msg, ok = true) {
   if (!els.status) return;
-  els.status.textContent = msg;
-  els.status.className = 'status' + (ok === true ? ' success' : ok === false ? ' error' : '');
+  els.status.textContent = msg || '';
+  els.status.classList.toggle('ok', !!msg && ok);
+  els.status.classList.toggle('err', !!msg && !ok);
 }
 
-function setDisabled(disabled) {
-  if (els.undoBtn) els.undoBtn.disabled = disabled;
-}
-
-function showDiff(removedTags, restoredTags) {
+function showDiff(removed, restored) {
   if (!els.diffWrap) return;
-  els.removed.innerHTML = (removedTags.length ? removedTags : ['—'])
-    .map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(' ');
-  els.restored.innerHTML = (restoredTags.length ? restoredTags : ['—'])
-    .map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(' ');
   els.diffWrap.hidden = false;
+  els.removed.innerHTML = removed.length ? removed.map(escapeHtml).join(', ') : '—';
+  els.restored.innerHTML = restored.length ? restored.map(escapeHtml).join(', ') : '—';
 }
 
 function hideDiff() {
@@ -138,11 +52,123 @@ function hideDiff() {
   els.restored.textContent = '';
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+async function refreshBaseTags() {
+  const data = await client.get([
+    'ticket.id',
+    'ticket.tags',
+    'ticket.comment.text',
+  ]);
+  ticketId = data['ticket.id'];
+  baseTags = new Set(data['ticket.tags'] || []);
+  lastTags = new Set(baseTags);
+  lastComment = data['ticket.comment.text'] || '';
 }
+
+function isBlankish(s) {
+  return !s || !String(s).trim();
+}
+
+async function applyAutoClearIfNeeded(evtName) {
+  if (readDisabled(ticketId)) return;
+
+  const data = await client.get(['ticket.comment.text', 'ticket.tags']);
+  const comment = data['ticket.comment.text'] || '';
+  const tags = new Set(data['ticket.tags'] || []);
+
+  const commentBecameBlank = isBlankish(comment) && !isBlankish(lastComment);
+  const commentChanged = comment !== lastComment;
+
+  if (commentChanged || commentBecameBlank) {
+    const removed = [...lastTags].filter((t) => !baseTags.has(t));
+    const restored = [...baseTags].filter((t) => !lastTags.has(t));
+
+    await client.set({
+      'ticket.comment.text': '',
+      'ticket.tags': [...baseTags],
+    });
+
+    showDiff(removed, restored);
+    setStatus(`Auto-cleared (${evtName}). You can type your own comment now.`, true);
+
+    lastComment = '';
+    lastTags = new Set(baseTags);
+  }
+}
+
+function detachWatchers() {
+  if (!watchersActive) return;
+  client.off('ticket.comment.changed', onCommentChange);
+  client.off('ticket.tags.changed', onTagsChange);
+  watchersActive = false;
+}
+
+function attachWatchers() {
+  if (watchersActive) return;
+  client.on('ticket.comment.changed', onCommentChange);
+  client.on('ticket.tags.changed', onTagsChange);
+  watchersActive = true;
+}
+
+async function onCommentChange() {
+  try { await applyAutoClearIfNeeded('comment change'); } catch (e) { console.error(e); }
+}
+async function onTagsChange() {
+  try { await applyAutoClearIfNeeded('tags change'); } catch (e) { console.error(e); }
+}
+
+async function onUndo() {
+  try {
+    hideDiff();
+    await client.set({ 'ticket.comment.text': lastComment, 'ticket.tags': [...lastTags] });
+    setStatus('Undid last auto-clear.', true);
+  } catch (e) {
+    console.error('Undo failed', e);
+    setStatus('Undo failed. Check console.', false);
+  }
+}
+
+function applyDisableUI(disabled) {
+  els.disableToggle.checked = !!disabled;
+  els.undoBtn.disabled = !!disabled;
+  if (disabled) {
+    setStatus('Disabled for this case. No autoclear will run.');
+    detachWatchers();
+  } else {
+    setStatus('');
+    attachWatchers();
+  }
+}
+
+async function onToggleChanged() {
+  const disabled = !!els.disableToggle.checked;
+  try {
+    persistDisabled(ticketId, disabled);
+    applyDisableUI(disabled);
+  } catch (e) {
+    console.error('Toggle error', e);
+    setStatus('Could not update disable state.', false);
+  }
+}
+
+// Boot
+(async function init() {
+  els.disableToggle = document.getElementById('disableToggle');
+  els.undoBtn = document.getElementById('undoBtn');
+  els.status = document.getElementById('status');
+  els.diffWrap = document.getElementById('diff');
+  els.removed = document.getElementById('removedTags');
+  els.restored = document.getElementById('restoredTags');
+
+  els.undoBtn.addEventListener('click', onUndo);
+  els.disableToggle.addEventListener('change', onToggleChanged);
+
+  try {
+    await refreshBaseTags();
+    const disabled = readDisabled(ticketId);
+    applyDisableUI(disabled);
+    if (!disabled) attachWatchers();
+  } catch (e) {
+    console.error('Init failed', e);
+    setStatus('Could not initialize. Refresh the ticket.', false);
+  }
+})();
