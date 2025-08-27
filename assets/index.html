@@ -10,17 +10,20 @@
   <div class="container">
     <h3>Undo Macro</h3>
     <p class="hint">
-      Auto-clears macro text and resets tags to the last saved set when a macro is applied or the comment is blank.
+      When you clear the whole comment (Ctrl+A → Backspace), I reset tags to the last saved set.
+      Applying a macro will NOT auto-clear.
     </p>
 
-    <div class="row">
+    <!-- Keep original order: Undo button first -->
+    <button id="undoBtn" class="btn">Undo</button>
+
+    <!-- Toggle is BELOW the Undo button as requested -->
+    <div class="row below-undo">
       <label class="toggle">
         <input type="checkbox" id="disableToggle">
         <span>Disable for this case</span>
       </label>
     </div>
-
-    <button id="undoBtn" class="btn">Undo</button>
 
     <div id="status" class="status" role="status" aria-live="polite"></div>
 
