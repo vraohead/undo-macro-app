@@ -1,5 +1,5 @@
 {
-  "name": "Undo Macro + Disable",
+  "name": "Undo Macro (Simple)",
   "author": {
     "name": "Headout",
     "email": "vivek.rao@headout.com"
@@ -8,12 +8,21 @@
   "private": true,
   "version": "1.0.0",
   "frameworkVersion": "2.0",
-  "requirements": {
-    "zendesk_api": true
-  },
+  "singleInstall": true,
+
   "location": {
     "support": {
       "ticket_sidebar": "assets/index.html"
     }
+  },
+
+  "requirements": {
+    "zendesk_api": true
+  },
+
+  "parameters": [],
+
+  "assets": {
+    "logo": "assets/icon.svg"
   }
 }
