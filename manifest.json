@@ -1,9 +1,9 @@
 {
   "name": "Undo Macro (Simple) + Scanner",
-  "author": { "name": "Headout", "email": "dev@headout.com" },
+  "author": { "name": "Headout", "email": "vivek.rao@headout.com" },
   "defaultLocale": "en",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "frameworkVersion": "2.0",
   "singleInstall": true,
   "location": {
@@ -11,9 +11,8 @@
   },
   "requirements": { "zendesk_api": true },
   "assets": { "logo": "assets/icon.svg" },
-
   "domainWhitelist": [
-    "https://script.google.com",
-    "https://*.googleusercontent.com"
+    "script.google.com",
+    "script.googleusercontent.com"
   ]
 }
