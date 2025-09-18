@@ -1,21 +1,35 @@
+:root {
+  --primary: #1f73b7;
+  --text-muted: #667085;
+  --text: #101828;
+  --ok: #067647;
+  --err: #b42318;
+  --bg: #ffffff;
+}
+
 * { box-sizing: border-box; }
-body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: #1f2328; margin: 0; }
+body { margin: 0; background: var(--bg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text); }
+
 .container { padding: 12px; }
+h3 { margin: 0 0 8px; font-size: 16px; line-height: 1.2; }
+.hint { color: var(--text-muted); margin: 0 0 12px; font-size: 12px; }
 
-h3 { margin: 0 0 6px; font-size: 16px; }
-.hint { margin: 0 0 12px; color: #586069; }
+#undoBtn {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+}
+#undoBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.row { margin-top: 10px; }
-.below-undo { margin-top: 12px; }
+.status { margin-top: 10px; font-size: 12px; color: #344054; }
+.status.error { color: var(--err); }
+.status.success { color: var(--ok); }
 
-.toggle { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
-.toggle input { transform: translateY(1px); }
-
-.btn { appearance: none; border: 1px solid #d0d7de; background: #f6f8fa; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-.btn[disabled] { opacity: 0.6; cursor: not-allowed; }
-
-.status { margin-top: 10px; padding: 8px; border-radius: 6px; background: #f6f8fa; border: 1px solid #d0d7de; min-height: 18px; }
-.status.ok { border-color: #1f883d33; background: #1f883d0d; }
-.status.err { border-color: #d1242f33; background: #d1242f0d; }
-
-.diff { margin-top: 10px; padding: 8px; border-radius: 6px; background: #fff; border: 1px dashed #d0d7de; }
+.diff { margin-top: 8px; padding: 8px; border-radius: 6px; background: #f8fafc; font-size: 12px; }
+.diff strong { font-weight: 700; }
+.diff .tag { display: inline-block; padding: 2px 6px; margin: 2px 4px 0 0; border-radius: 999px; background: #eef2ff; }
