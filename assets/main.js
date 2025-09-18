@@ -2,7 +2,7 @@
 const client = ZAFClient.init();
 
 /* ===================== CONFIG (edit these) ===================== */
-const WEBHOOK_URL = 'https://script.google.com/macros/s/PUT_YOUR_DEPLOYED_WEB_APP_ID/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyh31By-Z1sEUarGBGIjrJ9-Z-V5TpHzfK9b_G1nmhbfqzMgzkV08rLNWqu41wCOxps6Q/exec';
 
 const KEYWORDS = [
   'RO error', 'CO error', 'wrong ticket sent', 'wrong tickets booked',
