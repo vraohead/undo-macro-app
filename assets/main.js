@@ -36,6 +36,8 @@ client.on('app.registered', async () => {
   if (els.languageSelect) {
     els.languageSelect.addEventListener('change', onLanguageChange);
   }
+
+  // Event listener for undo button click
   if (els.undoBtn) {
     els.undoBtn.addEventListener('click', onUndo);
   }
