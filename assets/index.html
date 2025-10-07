@@ -9,7 +9,7 @@
 <body>
   <div class="container">
     <!-- Top Bar with Language Dropdown -->
-    <div class="top-bar">
+    <div id="topBar" class="top-bar">
       <label for="languageSelect">Select Language:</label>
       <select id="languageSelect">
         <option value="es">Spanish</option>
@@ -22,6 +22,9 @@
 
     <!-- Public Reply Textarea -->
     <textarea id="publicReplyText" placeholder="Type your message in English"></textarea>
+
+    <!-- Translate Button (or Undo if needed) -->
+    <button id="translateBtn">Translate</button>
 
     <!-- Undo Button -->
     <button id="undoBtn">Undo</button>
