@@ -1,9 +1,8 @@
 /* global ZAFClient */
 const client = ZAFClient.init();
 
-/* Hugging Face API Setup */
-const API_KEY = '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';  // Replace with your Hugging Face API key
-const TRANSLATE_URL = 'https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-en-';  // Base URL for the translation model
+/* Google Apps Script URL */
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPkX98H5wn_FiBqn3BKvac6luyRSSpwHKsy-EnFvKrIklEX3Fg_AE0QqadhguhOVqQ/exec';  // Replace with your Google Apps Script URL
 
 // Language mapping for the translation API
 const LANGUAGES = {
@@ -55,7 +54,7 @@ async function onLanguageChange() {
 
   setStatus('Translating...', true);
   try {
-    const translatedText = await translateText(text, language);
+    const translatedText = await translateTextWithAppsScript(text, language);
     els.translatedText.innerText = `Translated text: ${translatedText}`;
     setStatus('Translation successful!', true);
     
@@ -68,25 +67,25 @@ async function onLanguageChange() {
   }
 }
 
-// Function to perform translation using Hugging Face API
-async function translateText(text, targetLanguage) {
-  const url = `${TRANSLATE_URL}${targetLanguage}`;  // Set the correct model URL
-
-  const response = await fetch(url, {
+// Function to send translation request to Google Apps Script
+async function translateTextWithAppsScript(text, targetLanguage) {
+  const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer ' + API_KEY,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ inputs: text })
+    body: JSON.stringify({
+      text: text,
+      language: targetLanguage
+    })
   });
 
   if (!response.ok) {
-    throw new Error('Translation API call failed');
+    throw new Error('Google Apps Script API call failed');
   }
 
   const data = await response.json();
-  return data[0].translation_text;  // Return the translated text from the API response
+  return data.translatedText;  // Return the translated text from the response
 }
 
 // Helper to update the status
