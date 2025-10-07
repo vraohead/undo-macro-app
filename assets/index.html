@@ -8,8 +8,8 @@
 </head>
 <body>
   <div class="container">
-    <!-- Top Bar with Language Dropdown -->
-    <div id="topBar" class="top-bar">
+    <!-- Language Selection Dropdown -->
+    <div class="top-bar">
       <label for="languageSelect">Select Language:</label>
       <select id="languageSelect">
         <option value="es">Spanish</option>
@@ -23,14 +23,15 @@
     <!-- Public Reply Textarea -->
     <textarea id="publicReplyText" placeholder="Type your message in English"></textarea>
 
-    <!-- Translate Button (or Undo if needed) -->
+    <!-- Translate Button -->
     <button id="translateBtn">Translate</button>
 
     <!-- Undo Button -->
     <button id="undoBtn">Undo</button>
+
     <div id="status" class="status"></div>
     
-    <!-- Translated Text Display (will be automatically updated) -->
+    <!-- Translated Text Display -->
     <div id="translatedText" class="translated-text"></div>
 
   </div>
