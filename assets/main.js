@@ -2,7 +2,7 @@
 const client = ZAFClient.init();
 
 /* Hugging Face API Setup */
-const API_KEY = 'your_huggingface_api_key';  // Replace with your Hugging Face API key
+const API_KEY = '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';  // Replace with your Hugging Face API key
 const TRANSLATE_URL = 'https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-en-';  // Base URL for the translation model
 
 // Language mapping for the translation API
@@ -36,11 +36,9 @@ client.on('app.registered', async () => {
   if (els.languageSelect) {
     els.languageSelect.addEventListener('change', onLanguageChange);
   }
-
-  // Initial setup or fetch operations
-  try {
-    // Fetch existing ticket information or perform setup as needed
-  } catch (e) { console.error(e); }
+  if (els.undoBtn) {
+    els.undoBtn.addEventListener('click', onUndo);
+  }
 });
 
 // Function to handle language change and translation
@@ -95,7 +93,7 @@ function setStatus(msg, success) {
   els.status.className = `status${success ? ' success' : ' error'}`;
 }
 
-// Undo functionality (same as before)
+// Undo functionality
 function onUndo() {
   setStatus('Undoing…', true);
   setDisabled(true);
@@ -112,4 +110,5 @@ function onUndo() {
 // Helper to disable/enable buttons
 function setDisabled(disabled) {
   if (els.undoBtn) els.undoBtn.disabled = disabled;
+  if (els.translateBtn) els.translateBtn.disabled = disabled;
 }
