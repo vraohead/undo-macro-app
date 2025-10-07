@@ -1,40 +1,115 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Zendesk Translation App</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2/zaf_sdk.min.js"></script>
-</head>
-<body>
-  <div class="container">
-    <!-- Language Selection Dropdown -->
-    <div class="top-bar">
-      <label for="languageSelect">Select Language:</label>
-      <select id="languageSelect">
-        <option value="es">Spanish</option>
-        <option value="de">German</option>
-        <option value="it">Italian</option>
-        <option value="nl">Dutch</option>
-        <option value="pt">Portuguese</option>
-      </select>
-    </div>
+/* global ZAFClient */
+const client = ZAFClient.init();
 
-    <!-- Public Reply Textarea -->
-    <textarea id="publicReplyText" placeholder="Type your message in English"></textarea>
+/* Google Apps Script URL */
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPkX98H5wn_FiBqn3BKvac6luyRSSpwHKsy-EnFvKrIklEX3Fg_AE0QqadhguhOVqQ/exec';  // Replace with your Google Apps Script URL
 
-    <!-- Translate Button -->
-    <button id="translateBtn">Translate</button>
+// Language mapping for the translation API
+const LANGUAGES = {
+  'es': 'es', // Spanish
+  'de': 'de', // German
+  'it': 'it', // Italian
+  'nl': 'nl', // Dutch
+  'pt': 'pt', // Portuguese
+};
 
-    <!-- Undo Button -->
-    <button id="undoBtn">Undo</button>
+// Initialize elements
+const els = { 
+  undoBtn: null, 
+  status: null, 
+  translateBtn: null,
+  languageSelect: null,
+  publicReplyText: null,
+  translatedText: null
+};
 
-    <div id="status" class="status"></div>
+// Setup listeners and event handling
+client.on('app.registered', async () => {
+  els.undoBtn = document.getElementById('undoBtn');
+  els.status = document.getElementById('status');
+  els.languageSelect = document.getElementById('languageSelect');
+  els.publicReplyText = document.getElementById('publicReplyText');
+  els.translatedText = document.getElementById('translatedText');
+  
+  // Event listener for language selection change
+  if (els.languageSelect) {
+    els.languageSelect.addEventListener('change', onLanguageChange);
+  }
+
+  // Event listener for undo button click
+  if (els.undoBtn) {
+    els.undoBtn.addEventListener('click', onUndo);
+  }
+});
+
+// Function to handle language change and translation
+async function onLanguageChange() {
+  const text = els.publicReplyText.value.trim();  // Get text from the public reply box
+  const language = els.languageSelect.value;  // Get the selected language
+
+  if (!text) {
+    setStatus('Please enter text to translate.', false);
+    return;
+  }
+
+  setStatus('Translating...', true);
+  try {
+    const translatedText = await translateTextWithAppsScript(text, language);
+    els.translatedText.innerText = `Translated text: ${translatedText}`;
+    setStatus('Translation successful!', true);
     
-    <!-- Translated Text Display -->
-    <div id="translatedText" class="translated-text"></div>
+    // Optional: Automatically update the public reply text area with the translated text
+    els.publicReplyText.value = translatedText;
 
-  </div>
-  <script src="main.js"></script>
-</body>
-</html>
+  } catch (error) {
+    setStatus('Translation failed. Please try again.', false);
+    console.error(error);
+  }
+}
+
+// Function to send translation request to Google Apps Script
+async function translateTextWithAppsScript(text, targetLanguage) {
+  const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      text: text,
+      language: targetLanguage
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Google Apps Script API call failed');
+  }
+
+  const data = await response.json();
+  return data.translatedText;  // Return the translated text from the response
+}
+
+// Helper to update the status
+function setStatus(msg, success) {
+  els.status.textContent = msg;
+  els.status.className = `status${success ? ' success' : ' error'}`;
+}
+
+// Undo functionality
+function onUndo() {
+  setStatus('Undoing…', true);
+  setDisabled(true);
+  try {
+    // Add your undo logic here if needed
+    setStatus('Undo successful.', true);
+  } catch (e) {
+    setStatus('Undo failed.', false);
+  } finally {
+    setDisabled(false);
+  }
+}
+
+// Helper to disable/enable buttons
+function setDisabled(disabled) {
+  if (els.undoBtn) els.undoBtn.disabled = disabled;
+  if (els.translateBtn) els.translateBtn.disabled = disabled;
+}
